@@ -1,6 +1,3 @@
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE DefaultSignatures #-}
 {- |
 Module      :  Data.Syntax
 Description :  Abstract syntax description.
@@ -28,6 +25,7 @@ import           Control.Category.Structures
 import           Control.Lens.Iso
 import           Control.Lens.SemiIso
 import           Control.SIArrow
+import           Data.Kind (Type)
 import           Data.MonoTraversable
 import           Data.Sequences hiding (take, takeWhile, replicate)
 import qualified Data.Vector as V
@@ -53,7 +51,7 @@ class ( SIArrow syn
       => Syntax syn
     where
     -- | The sequence type used by this syntax.
-    type Seq syn :: *
+    type Seq syn :: Type
 
     -- | Any character.
     anyChar :: syn () (Element (Seq syn))
@@ -120,10 +118,9 @@ class ( SIArrow syn
     ivecN :: Int -> syn Int (Int, a) -> syn () (V.Vector a)
     ivecN n e = (packed /$/)
               $ sisequence
-              $ map (\(i, e') -> constant i ^>> e'
-                                 >>> first (sipure (constant i))
-                                 >># unit . swapped)
-              $ zip [0 .. n-1] (replicate n e)
+              $ zipWith (\i e' -> constant i ^>> e'
+                                  >>> first (sipure (constant i))
+                                  >># unit . swapped) [0 .. n-1] (replicate n e)
 
     -- | Constant size unboxed vector. The default implementation uses lists, but
     -- "syntax-attoparsec" and "syntax-printer" override it with an efficient
@@ -146,10 +143,9 @@ class ( SIArrow syn
     uivecN :: VU.Unbox a => Int -> syn Int (Int, a) -> syn () (VU.Vector a)
     uivecN n e = (packed /$/)
                $ sisequence
-               $ map (\(i, e') -> constant i ^>> e'
-                                  >>> first (sipure (constant i))
-                                  >># unit . swapped)
-               $ zip [0 .. n-1] (replicate n e)
+               $ zipWith (\i e' -> constant i ^>> e'
+                                   >>> first (sipure (constant i))
+                                   >># unit . swapped) [0 .. n-1] (replicate n e)
 
     {-# MINIMAL anyChar #-}
 

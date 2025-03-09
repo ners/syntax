@@ -1,6 +1,3 @@
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE FlexibleContexts #-}
 {- |
 Module      :  Data.Syntax.Combinator
 Description :  Combinators that work with any sequence type.
