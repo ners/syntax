@@ -32,11 +32,13 @@ test-suite spec
   other-modules:
     LittleEndianSpec,
     BigEndianSpec,
+    Util,
   build-depends:
     QuickCheck,
     attoparsec,
     base,
     bytestring,
     hspec,
+    mono-traversable,
     syntax,
     syntax-attoparsec,

@@ -2,6 +2,8 @@
 {-# LANGUAGE TypeApplications #-}
 module LittleEndianSpec where
 
+import Util
+
 import Test.Hspec
 import Test.Hspec.QuickCheck
 
@@ -22,20 +24,6 @@ spec = do
     (parse . BS.pack) [0x34, 0x12]
       `shouldBe` Right ()
 
-  prop "parses Word16" $ \(x :: Word16) -> do
-    let s = littleEndian @Word16 $ anyChar
-        parse = AP.parseOnly (getParser_ s)
-    (parse . BS.pack . toBytes) x
-      `shouldBe` Right x
-
-  prop "parses Word32" $ \(x :: Word32) -> do
-    let s = littleEndian @Word32 $ anyChar
-        parse = AP.parseOnly (getParser_ s)
-    (parse . BS.pack . toBytes) x
-      `shouldBe` Right x
-
-  prop "parses Word64" $ \(x :: Word64) -> do
-    let s = littleEndian @Word64 $ anyChar
-        parse = AP.parseOnly (getParser_ s)
-    (parse . BS.pack . toBytes) x
-      `shouldBe` Right x
+  prop "parses Word16" $ roundtrip @Word16 littleEndian toBytes
+  prop "parses Word32" $ roundtrip @Word32 littleEndian toBytes
+  prop "parses Word64" $ roundtrip @Word64 littleEndian toBytes
