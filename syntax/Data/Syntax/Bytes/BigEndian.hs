@@ -27,7 +27,7 @@ import Control.Lens ( Iso', iso, (^.), view, from )
 import qualified Data.Syntax as Syntax
 
 coerceBits :: (FiniteBits a, FiniteBits b) => a -> b
-coerceBits a = foldr (.|.) b [ bit i | i <- [0, bitSize - 1], testBit a i ]
+coerceBits a = foldr (.|.) b [ bit i | i <- [0 .. bitSize - 1], testBit a i ]
     where
         b = zeroBits
         bitSize = min (finiteBitSize a) (finiteBitSize b)
@@ -39,7 +39,7 @@ class Bytes a where
 
     getByte :: Int -> a -> Data.Word8
     default getByte :: FiniteBits a => Int -> a -> Data.Word8
-    getByte i a = coerceBits (a .>>. (i * 8))
+    getByte i a = coerceBits (a .>>. ((byteSize @a - i - 1) * 8))
 
     toBytes :: a -> [Data.Word8]
     default toBytes :: FiniteBits a => a -> [Data.Word8]
@@ -47,7 +47,7 @@ class Bytes a where
 
     fromBytes :: [Data.Word8] -> a
     default fromBytes :: FiniteBits a => [Data.Word8] -> a
-    fromBytes = foldr (.|.) zeroBits . zipWith (\i b -> coerceBits b .<<. (i * 8)) [0 ..]
+    fromBytes = foldr (.|.) zeroBits . zipWith (\i b -> coerceBits b .<<. ((byteSize @a - i - 1) * 8)) [0 ..]
 
 bytes :: Bytes a => Iso' a [Data.Word8]
 bytes = iso toBytes fromBytes
