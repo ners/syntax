@@ -51,6 +51,7 @@ library
                        Data.Syntax.Char
                        Data.Syntax.Combinator
                        Data.Syntax.Indent
+  other-modules:       Data.Syntax.Bytes.Util
   build-depends:       base >= 4 && < 5
                      , mono-traversable
                      , lens >= 4
@@ -76,10 +77,10 @@ test-suite spec
   main-is: Spec.hs
   default-language: Haskell2010
   other-modules:
-    LittleEndianSpec,
-    BigEndianSpec,
+    BytesSpec,
   build-depends:
+    QuickCheck,
     base,
     hspec,
-    QuickCheck,
+    lens,
     syntax,

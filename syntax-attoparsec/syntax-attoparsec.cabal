@@ -30,9 +30,7 @@ test-suite spec
   main-is: Spec.hs
   default-language: Haskell2010
   other-modules:
-    LittleEndianSpec,
-    BigEndianSpec,
-    Util,
+    BytesSpec,
   build-depends:
     QuickCheck,
     attoparsec,

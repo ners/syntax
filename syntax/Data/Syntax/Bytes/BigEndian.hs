@@ -3,53 +3,49 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeApplications #-}
+
 module Data.Syntax.Bytes.BigEndian where
 
+import Control.Category (Category)
 import Control.Category.Reader
 import Control.Category.Structures
+import Control.Lens (Iso', from, iso, view, (^.))
 import Control.Lens.SemiIso
 import Control.SIArrow
 import Data.Bits
 import Data.Char
+import qualified Data.Int as Data
+import Data.Kind (Type)
+import qualified Data.List.Extra as List
 import Data.MonoTraversable
 import Data.Scientific (Scientific)
+import Data.Sequences (IsSequence (..), SemiSequence (..))
+import qualified Data.Sequences as Sequence
 import Data.Syntax
+import qualified Data.Syntax as Syntax
+import Data.Syntax.Bytes.Util
 import Data.Syntax.Combinator
 import Data.Text (Text)
-import qualified Data.Int as Data
 import qualified Data.Word as Data
-import Data.Kind (Type)
-import Control.Category (Category)
-import Data.Sequences (IsSequence(..), SemiSequence(..))
-import qualified Data.Sequences as Sequence
-import qualified Data.List.Extra as List
-import Control.Lens ( Iso', iso, (^.), view, from )
-import qualified Data.Syntax as Syntax
-
-coerceBits :: (FiniteBits a, FiniteBits b) => a -> b
-coerceBits a = foldr (.|.) b [ bit i | i <- [0 .. bitSize - 1], testBit a i ]
-    where
-        b = zeroBits
-        bitSize = min (finiteBitSize a) (finiteBitSize b)
 
 class Bytes a where
     byteSize :: Int
-    default byteSize :: FiniteBits a => Int
+    default byteSize :: (FiniteBits a) => Int
     byteSize = finiteBitSize (zeroBits :: a) `div` 8
 
     getByte :: Int -> a -> Data.Word8
-    default getByte :: FiniteBits a => Int -> a -> Data.Word8
+    default getByte :: (FiniteBits a) => Int -> a -> Data.Word8
     getByte i a = coerceBits (a .>>. ((byteSize @a - i - 1) * 8))
 
     toBytes :: a -> [Data.Word8]
-    default toBytes :: FiniteBits a => a -> [Data.Word8]
+    default toBytes :: (FiniteBits a) => a -> [Data.Word8]
     toBytes a = flip getByte a <$> [0 .. byteSize @a - 1]
 
     fromBytes :: [Data.Word8] -> a
-    default fromBytes :: FiniteBits a => [Data.Word8] -> a
+    default fromBytes :: (FiniteBits a) => [Data.Word8] -> a
     fromBytes = foldr (.|.) zeroBits . zipWith (\i b -> coerceBits b .<<. ((byteSize @a - i - 1) * 8)) [0 ..]
 
-bytes :: Bytes a => Iso' a [Data.Word8]
+bytes :: (Bytes a) => Iso' a [Data.Word8]
 bytes = iso toBytes fromBytes
 
 instance Bytes Data.Word8
@@ -63,14 +59,14 @@ instance Bytes Data.Int64
 
 newtype ByteWise (a :: Type) (syn :: Type -> Type -> Type) (x :: Type) (y :: Type) = ByteWise (syn x y)
 
-deriving instance Category syn => Category (ByteWise a syn)
-deriving instance CatPlus syn => CatPlus (ByteWise a syn)
-deriving instance Coproducts syn => Coproducts (ByteWise a syn)
-deriving instance Products syn => Products (ByteWise a syn)
-deriving instance SIArrow syn => SIArrow (ByteWise a syn)
+deriving instance (Category syn) => Category (ByteWise a syn)
+deriving instance (CatPlus syn) => CatPlus (ByteWise a syn)
+deriving instance (Coproducts syn) => Coproducts (ByteWise a syn)
+deriving instance (Products syn) => Products (ByteWise a syn)
+deriving instance (SIArrow syn) => SIArrow (ByteWise a syn)
 
 newtype BytesSeq a seq = BytesSeq seq
-    deriving newtype Eq
+    deriving newtype (Eq)
 
 type instance Element (BytesSeq a seq) = a
 
@@ -94,7 +90,7 @@ instance (IsSequence seq, Element seq ~ Data.Word8, Bytes a) => MonoTraversable 
     otraverse f = fmap stupidFromList . otraverse f . stupidToList
     omapM f = fmap stupidFromList . omapM f . stupidToList
 
-instance (IsSequence seq, Element seq ~ Data.Word8, Bytes a) => GrowingAppend (BytesSeq a seq) where
+instance (IsSequence seq, Element seq ~ Data.Word8, Bytes a) => GrowingAppend (BytesSeq a seq)
 
 instance (IsSequence seq, Element seq ~ Data.Word8, Bytes a) => SemiSequence (BytesSeq a seq) where
     type Index (BytesSeq a seq) = Index seq
@@ -109,12 +105,12 @@ instance (IsSequence seq, Element seq ~ Data.Word8, Bytes a) => MonoPointed (Byt
     opoint = stupidFromList . List.singleton
 
 instance (IsSequence seq, Element seq ~ Data.Word8, Bytes a) => Semigroup (BytesSeq a seq) where
-  a <> b = stupidFromList $ stupidToList a <> stupidToList b
+    a <> b = stupidFromList $ stupidToList a <> stupidToList b
 
 instance (IsSequence seq, Element seq ~ Data.Word8, Bytes a) => Monoid (BytesSeq a seq) where
     mempty = stupidFromList mempty
 
-instance (IsSequence seq, Element seq ~ Data.Word8, Bytes a) => IsSequence (BytesSeq a seq) where
+instance (IsSequence seq, Element seq ~ Data.Word8, Bytes a) => IsSequence (BytesSeq a seq)
 
 instance (Syntax syn, Element (Seq syn) ~ Data.Word8, Eq a, Bytes a) => Syntax (ByteWise a syn) where
     type Seq (ByteWise a syn) = BytesSeq a (Seq syn)
