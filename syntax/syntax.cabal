@@ -53,6 +53,7 @@ library
                        Data.Syntax.Indent
   other-modules:       Data.Syntax.Bytes.Util
   build-depends:       base >= 4 && < 5
+                     , bytestring
                      , mono-traversable
                      , lens >= 4
                      , semi-iso >= 1
