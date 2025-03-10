@@ -1,22 +1,31 @@
-{-# LANGUAGE ConstraintKinds #-}
+module Data.Syntax.Bytes
+    ( module Data.Syntax.Bytes
+    , module Data.Syntax.Bytes.BigEndian
+    , module Data.Syntax.Bytes.LittleEndian
+    , module Data.Syntax.Bytes.Util
+    ) where
 
-module Data.Syntax.Bytes where
-
-import qualified Data.Syntax.Bytes.LittleEndian as LittleEndian
-import qualified Data.Syntax.Bytes.BigEndian as BigEndian
-import Data.Syntax
-import Data.MonoTraversable (Element)
-import Data.Word (Word8)
+import Data.Syntax.Bytes.LittleEndian (littleEndian)
+import Data.Syntax.Bytes.BigEndian (bigEndian)
+import Data.Syntax.Bytes.Util (SyntaxByte, SyntaxByteString)
+import qualified Data.Syntax.Bytes.Util as Util
 import Data.ByteString (ByteString)
+import Control.Lens.SemiIso (constant)
+import Control.SIArrow ((#>>), SIArrow (sibind), (/$/))
+import Control.Lens (iso)
+import qualified Data.Syntax
+import qualified Data.ByteString
+import Control.Arrow ((>>>))
+import Data.Int (Int8)
+import Data.Word (Word8)
+import Data.Syntax (Syntax(char), satisfy, anyChar)
 
--- | A useful synonym for Syntax with Word8 sequences.
-type SyntaxByte syn = (Syntax syn, Element (Seq syn) ~ Word8)
+-- | Read an integral length, followed by length bytes
+stringWithLen :: forall i syn. (SyntaxByteString syn, Integral i) => syn () i -> syn () ByteString
+stringWithLen getLen = getLen >>> sibind (iso f g)
+  where
+    f :: i -> syn i ByteString
+    f len = constant len #>> Data.Syntax.take (fromIntegral len)
+    g :: ByteString -> syn i ByteString
+    g = f . fromIntegral . Data.ByteString.length
 
--- | A useful synonym for Syntax with ByteString sequences.
-type SyntaxByteString syn = (Syntax syn, Seq syn ~ ByteString)
-
-littleEndian :: forall a syn x y. (SyntaxByte syn, LittleEndian.Bytes a) => (LittleEndian.ByteWise a syn) x y -> syn x y
-littleEndian (LittleEndian.ByteWise s) = s
-
-bigEndian :: forall a syn x y. (SyntaxByte syn, BigEndian.Bytes a) => (BigEndian.ByteWise a syn) x y -> syn x y
-bigEndian (BigEndian.ByteWise s) = s
