@@ -25,58 +25,40 @@
         inherit root;
         fileset = fileFilter (file: any file.hasExt [ "cabal" "hs" "md" ]) root;
       };
-      readDirs = root: attrNames (lib.filterAttrs (_: type: type == "directory") (readDir root));
-      readFiles = root: attrNames (lib.filterAttrs (_: type: type == "regular") (readDir root));
-      basename = path: suffix: with lib; pipe path [
-        (splitString "/")
-        last
-        (removeSuffix suffix)
-      ];
-      cabalProjectPackages = root: with lib; foreach (readDirs root) (dir:
-        let
-          path = "${root}/${dir}";
-          files = readFiles path;
-          cabalFiles = filter (strings.hasSuffix ".cabal") files;
-          pnames = map (path: basename path ".cabal") cabalFiles;
-          pname = if pnames == [ ] then null else head pnames;
-        in
-        optionalAttrs (pname != null) { ${pname} = path; }
-      );
-      cabalProjectPnames = root: lib.attrNames (cabalProjectPackages root);
-      cabalProjectOverlay = root: hfinal: hprev: with lib;
-        mapAttrs
-          (pname: path: hfinal.callCabal2nix pname path { })
-          (cabalProjectPackages root);
-      project = sourceFilter ./.;
-      pnames = cabalProjectPnames project;
+      pnames = map (path: baseNameOf (dirOf path)) (lib.fileset.toList (lib.fileset.fileFilter (file: file.hasExt "cabal") ./.));
       ghcsFor = pkgs: with lib; foldlAttrs
-        (acc: name: hp:
+        (acc: name: hp':
           let
-            version = getVersion hp.ghc;
+            hp = tryEval hp';
+            version = getVersion hp.value.ghc;
             majorMinor = versions.majorMinor version;
             ghcName = "ghc${replaceStrings ["."] [""] majorMinor}";
           in
-          if hp ? ghc && ! acc ? ${ghcName} && versionAtLeast version "9.2" && versionOlder version "9.11"
-          then acc // { ${ghcName} = hp; }
+          if hp.value ? ghc && ! acc ? ${ghcName} && versionAtLeast version "9.4" && versionOlder version "9.13"
+          then acc // { ${ghcName} = hp.value; }
           else acc
         )
         { }
         pkgs.haskell.packages;
       hpsFor = pkgs: { default = pkgs.haskellPackages; } // ghcsFor pkgs;
-      overlay = lib.composeManyExtensions [
-        inputs.semi-iso.overlays.default
-        (final: prev: {
-          haskell = prev.haskell // {
-            packageOverrides = lib.composeManyExtensions [
-              prev.haskell.packageOverrides
-              (cabalProjectOverlay project)
-            ];
-          };
-        })
+      haskell-overlay = lib.composeManyExtensions [
+        inputs.semi-iso.overlays.haskell
+        (hfinal: _: lib.genAttrs pnames (pname: hfinal.callCabal2nix pname (sourceFilter ./${pname}) { }))
       ];
+      overlay = final: prev: {
+        haskell = prev.haskell // {
+          packageOverrides = lib.composeManyExtensions [
+            prev.haskell.packageOverrides
+            haskell-overlay
+          ];
+        };
+      };
     in
     {
-      overlays.default = overlay;
+      overlays = {
+        default = overlay;
+        haskell = haskell-overlay;
+      };
     }
     //
     foreach inputs.nixpkgs.legacyPackages
