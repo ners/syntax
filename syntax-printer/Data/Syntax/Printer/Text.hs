@@ -22,10 +22,9 @@ import           Control.Category
 import           Control.Category.Structures
 import           Control.Monad
 import           Control.SIArrow
-import           Data.Monoid (mempty)
 import           Data.Semigroupoid.Dual
 import           Data.Syntax
-import           Data.Syntax.Char
+import           Data.Syntax.Numeric
 import           Data.Syntax.Printer.Consumer
 import           Data.Text (Text)
 import qualified Data.Text as T
@@ -76,7 +75,7 @@ instance Isolable Printer where
     isolate p = Printer $ Dual $ Kleisli $
         Consumer . fmap ((mempty, ) . toStrict . toLazyText) . runPrinter_ p
 
-instance SyntaxChar Printer where
+instance SyntaxNum Printer where
     decimal = wrap $ Right . B.decimal
     hexadecimal = wrap $ Right . B.hexadecimal
     realFloat = wrap $ Right . B.realFloat

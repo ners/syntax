@@ -17,6 +17,8 @@ import qualified Data.Syntax as S
 import qualified Data.Syntax.Attoparsec.Text.Lazy as S
 import           Data.Syntax.Char (SyntaxText)
 import qualified Data.Syntax.Char as S
+import           Data.Syntax.Numeric (SyntaxNum)
+import qualified Data.Syntax.Numeric as S
 import qualified Data.Syntax.Combinator as S
 import           Data.Syntax.Indent (Indent)
 import qualified Data.Syntax.Indent as S
@@ -43,14 +45,14 @@ $(makePrisms ''Value)
 -- S.indented increases the indentation level.
 
 -- | Char encoded as 4 hex digits.
-hexCode :: SyntaxText syn => Indent syn () Char
+hexCode :: (SyntaxText syn, SyntaxNum syn) => Indent syn () Char
 hexCode = from enum . bifoldl1_ (iso u f) /$/ sireplicate 4 S.digitHex
   where
     f (x, y) = 16 * x + y
     u 0 = Nothing
     u n = Just (n `quotRem` 16)
 
-string :: SyntaxText syn => Indent syn () Text
+string :: (SyntaxText syn, SyntaxNum syn) => Indent syn () Text
 string =  S.packed /$/ S.char '"' */ simany character /* S.char '"'
   where
     character =  S.satisfy (\x -> x /= '"' && x /= '\\')
@@ -66,7 +68,7 @@ string =  S.packed /$/ S.char '"' */ simany character /* S.char '"'
 mapFromList :: Ord i => Iso' (Map i v) [(i, v)]
 mapFromList = iso Map.toList Map.fromList
 
-object :: SyntaxText syn => Indent syn () Value
+object :: (SyntaxText syn, SyntaxNum syn) => Indent syn () Value
 object = _Object . mapFromList 
       /$~ S.char '{'
       /*/ S.indented (
@@ -76,7 +78,7 @@ object = _Object . mapFromList
       /*/ S.breakLine /*/ S.char '}'
   where field = string /* S.spaces_ /* S.char ':' /* S.spaces /*/ value
 
-array :: SyntaxText syn => Indent syn () Value
+array :: (SyntaxText syn, SyntaxNum syn) => Indent syn () Value
 array = _Array 
      /$~ S.char '[' 
      /*/ S.indented (
@@ -85,7 +87,7 @@ array = _Array
          )
      /*/ S.breakLine /*/ S.char ']'
 
-value :: SyntaxText syn => Indent syn () Value
+value :: (SyntaxText syn, SyntaxNum syn) => Indent syn () Value
 value =  _String /$/ string
      /+/ _Number /$/ S.scientific
      /+/ object
@@ -101,7 +103,7 @@ main = do
     t <- T.getContents
 
     -- Indent with 2 spaces.
-    let tab :: SyntaxText syn => syn () ()
+    let tab :: (SyntaxText syn, SyntaxNum syn) => syn () ()
         tab = sireplicate_ 2 (S.char ' ')
         parser = S.getParser_ $ S.runIndent value tab
         printer = S.runPrinter_ $ S.runIndent value tab

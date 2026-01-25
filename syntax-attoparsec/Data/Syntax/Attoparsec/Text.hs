@@ -25,7 +25,7 @@ import           Control.SIArrow
 import qualified Data.Attoparsec.Text as AP
 import           Data.Scientific
 import           Data.Syntax
-import           Data.Syntax.Char
+import           Data.Syntax.Numeric
 import           Data.Text (Text)
 import qualified Data.Vector as V
 import qualified Data.Vector.Unboxed as VU
@@ -60,7 +60,7 @@ instance Syntax WrappedParser where
 instance Isolable WrappedParser where
     isolate p = Wrapped $ Kleisli $ either fail return . AP.parseOnly (unwrap p ())
 
-instance SyntaxChar WrappedParser where
+instance SyntaxNum WrappedParser where
     decimal = wrap AP.decimal
     hexadecimal = wrap AP.hexadecimal
     realFloat = wrap $ fmap toRealFloat AP.scientific

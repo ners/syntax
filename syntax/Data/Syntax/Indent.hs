@@ -13,7 +13,7 @@ Stability   :  experimental
 Provides a very simple indentation as a category transformer.
 -}
 module Data.Syntax.Indent (
-    Indent,
+    Indent(..),
     runIndent,
     breakLine,
     indented
@@ -50,12 +50,6 @@ instance Syntax syn => Syntax (Indent syn) where
     takeWhile1 = Indent . takeWhile1
     takeTill = Indent . takeTill
     takeTill1 = Indent . takeTill1
-
-instance SyntaxChar syn => SyntaxChar (Indent syn) where
-    decimal = Indent decimal
-    hexadecimal = Indent hexadecimal
-    scientific = Indent scientific
-    realFloat = Indent realFloat
 
 -- | @runIndent m tab@ runs the 'Indent' transformer using @tab@ once for each
 -- level of indentation.

@@ -28,6 +28,7 @@ import           Control.Category.Structures
 import           Control.Lens.Iso
 import           Control.Lens.SemiIso
 import           Control.SIArrow
+import           Data.Kind (Type)
 import           Data.MonoTraversable
 import           Data.Sequences hiding (take, takeWhile, replicate)
 import qualified Data.Vector as V
@@ -53,7 +54,7 @@ class ( SIArrow syn
       => Syntax syn
     where
     -- | The sequence type used by this syntax.
-    type Seq syn :: *
+    type Seq syn :: Type
 
     -- | Any character.
     anyChar :: syn () (Element (Seq syn))

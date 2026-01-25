@@ -13,7 +13,6 @@ module Data.Syntax.Printer.Consumer where
 import Control.Applicative
 import Control.Monad
 import Data.Bifunctor.Apply
-import Data.Monoid
 
 -- | A writer monad combined with Either String.
 newtype Consumer m a = Consumer { runConsumer :: Either String (m, a) }

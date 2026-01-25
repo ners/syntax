@@ -25,7 +25,6 @@ import           Control.SIArrow
 import           Data.ByteString.Lazy (ByteString)
 import qualified Data.ByteString.Lazy as BS
 import           Data.ByteString.Builder
-import           Data.Monoid (mempty)
 import           Data.Semigroupoid.Dual
 import           Data.Syntax
 import           Data.Syntax.Printer.Consumer

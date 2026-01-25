@@ -26,7 +26,6 @@ import           Data.ByteString (ByteString)
 import qualified Data.ByteString as BS
 import           Data.ByteString.Lazy (toStrict)
 import           Data.ByteString.Builder
-import           Data.Monoid (mempty)
 import           Data.Semigroupoid.Dual
 import           Data.Syntax
 import           Data.Syntax.Printer.Consumer
