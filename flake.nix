@@ -10,6 +10,10 @@
       url = "github:ners/semi-iso";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    miso = {
+      url = "github:haskell-miso/miso";
+      flake = false;
+    };
   };
 
   outputs = inputs:
@@ -34,6 +38,9 @@
       haskell-overlay = lib.composeManyExtensions [
         inputs.semi-iso.overlays.haskell
         (hfinal: _: lib.genAttrs pnames (pname: hfinal.callCabal2nix pname (sourceFilter ./${pname}) { }))
+        (hfinal: _: {
+          miso = hfinal.callCabal2nix "miso" inputs.miso { };
+        })
       ];
       overlay = final: prev: {
         haskell = prev.haskell // {

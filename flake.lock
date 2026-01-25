@@ -1,5 +1,21 @@
 {
   "nodes": {
+    "miso": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1769369556,
+        "narHash": "sha256-3oYp11noXdGQGTAX5hm/GAePkcSz+XPTx5TZnmaAmWM=",
+        "owner": "haskell-miso",
+        "repo": "miso",
+        "rev": "01fe5f2f47441de00b436bac4259f275aaa78769",
+        "type": "github"
+      },
+      "original": {
+        "owner": "haskell-miso",
+        "repo": "miso",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1769170682,
@@ -18,6 +34,7 @@
     },
     "root": {
       "inputs": {
+        "miso": "miso",
         "nixpkgs": "nixpkgs",
         "semi-iso": "semi-iso"
       }
