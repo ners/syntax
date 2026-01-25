@@ -25,22 +25,12 @@
         inherit root;
         fileset = fileFilter (file: any file.hasExt [ "cabal" "hs" "md" ]) root;
       };
-      pnames = map (path: baseNameOf (dirOf path)) (lib.fileset.toList (lib.fileset.fileFilter (file: file.hasExt "cabal") ./.));
-      ghcsFor = pkgs: with lib; foldlAttrs
-        (acc: name: hp':
-          let
-            hp = tryEval hp';
-            version = getVersion hp.value.ghc;
-            majorMinor = versions.majorMinor version;
-            ghcName = "ghc${replaceStrings ["."] [""] majorMinor}";
-          in
-          if hp.value ? ghc && ! acc ? ${ghcName} && versionAtLeast version "9.4" && versionOlder version "9.13"
-          then acc // { ${ghcName} = hp.value; }
-          else acc
-        )
-        { }
-        pkgs.haskell.packages;
-      hpsFor = pkgs: { default = pkgs.haskellPackages; } // ghcsFor pkgs;
+      projects =
+        with lib;
+        genAttrs'
+          (fileset.toList (fileset.fileFilter (file: file.hasExt "cabal") ./.))
+          (file: nameValuePair (removeSuffix ".cabal" (baseNameOf file)) (dirOf file));
+      pnames = attrNames projects;
       haskell-overlay = lib.composeManyExtensions [
         inputs.semi-iso.overlays.haskell
         (hfinal: _: lib.genAttrs pnames (pname: hfinal.callCabal2nix pname (sourceFilter ./${pname}) { }))
@@ -65,8 +55,21 @@
       (system: pkgs':
         let
           pkgs = pkgs'.extend overlay;
-          hps = hpsFor pkgs;
           name = "syntax";
+          hps = with lib; foldlAttrs
+            (acc: name: hp':
+              let
+                hp = tryEval hp';
+                version = getVersion hp.value.ghc;
+                majorMinor = versions.majorMinor version;
+                ghcName = "ghc${replaceStrings ["."] [""] majorMinor}";
+              in
+              if hp.value ? ghc && ! acc ? ${ghcName} && versionAtLeast version "9.4" && versionOlder version "9.13"
+              then acc // { ${ghcName} = hp.value; }
+              else acc
+            )
+            { default = pkgs.haskellPackages; }
+            pkgs.haskell.packages;
           bin-pnames = filter (pname: lib.strings.hasPrefix "syntax-example" pname) pnames;
           lib-pnames = filter (pname: ! lib.strings.hasPrefix "syntax-example" pname) pnames;
           bins = pkgs.buildEnv {
